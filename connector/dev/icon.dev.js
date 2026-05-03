@@ -175,9 +175,9 @@
         continue;
       }
 
-      const category = parts[0], name = parts[1], variant = parts[2];
+      const category = parts[0];
+      const iconId = parts[1];
       const spriteFile = `${category}.svg`;
-      const iconId = `${name}-${variant}`;
 
       const isSpriteLoaded = await loadSprite(spriteFile);
 
