@@ -11,7 +11,7 @@
   "use strict";
 
   // Base URL for fetching SVG sprites from the main branch
-  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/Icon-Stellar@main/sprites`;
+  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/icon-stellar@latest/sprites`;
   
   // Track loaded sprites and active network requests to prevent duplicates
   const loadedSprites = new Set();
