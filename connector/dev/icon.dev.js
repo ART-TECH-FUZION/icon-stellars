@@ -1,18 +1,17 @@
 /**
  * ============================================================================
- * ICON-STELLAR - SVG ICON LIBRARY (PRODUCTION STRICT VERSION)
+ * ICON-STELLAR - SVG ICON LIBRARY (PRODUCTION STRICT VERSION - NO CONSOLE)
  * ============================================================================
  * Handles fetching, caching, and injecting SVG sprites from a CDN.
  * Strictly enforces the "category:name:variant" format and handles missing icons.
+ * Completely silent in the console for production environments.
  */
 
 (function () {
   "use strict";
 
-  console.log("🔥 Icon-Stellar Script Initialized!");
-
   // Base URL for fetching SVG sprites from the main branch
-  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/icon-stellars@latest/sprites`;
+  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/Icon-Stellar@main/sprites`;
   
   // Track loaded sprites and active network requests to prevent duplicates
   const loadedSprites = new Set();
@@ -32,10 +31,8 @@
     const doc = parser.parseFromString(svgData, "image/svg+xml");
     const svgNode = doc.querySelector("svg");
 
-    if (!svgNode) {
-      console.error(`Icon-Stellar: Invalid SVG format detected in ${spriteFile}`);
-      return;
-    }
+    // Silently return if SVG format is invalid
+    if (!svgNode) return;
 
     // Hide the injected sprite visually but keep it readable by the browser
     svgNode.setAttribute("data-sprite", spriteFile);
@@ -84,7 +81,7 @@
         return true;
 
       } catch (error) {
-        console.error(`Icon-Stellar: Failed to fetch sprite ${spriteFile}`, error);
+        // Silently fail and return false
         return false;
       }
     })();
@@ -166,7 +163,6 @@
       
       // STRICT RULE: User must provide all 3 parts (category, name, variant)
       if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
-        console.warn(`Icon-Stellar: Invalid format "${value}". Must be "category:name:variant".`);
         el.innerHTML = `<span class="icon-missing" title="Invalid format">☒</span>`;
         continue;
       }
@@ -183,7 +179,6 @@
 
       // VALIDATION: Check if sprite failed OR if the specific icon ID does not exist in the DOM
       if (!isSpriteLoaded || !document.getElementById(iconId)) {
-        console.warn(`Icon-Stellar: Icon '${iconId}' not found in ${spriteFile}.`);
         el.innerHTML = `<span class="icon-missing" title="Icon not found">☒</span>`;
         continue;
       }
