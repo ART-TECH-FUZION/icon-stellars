@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" id="home-light" stroke="currentColor" fill="none">
-  <g stroke-width="20">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" id="home-light">
+  <g stroke="currentColor" fill="none" stroke-width="20">
     <path d="M 80 300 L 320 100 L 560 300" />
     <path d="M 150 242 V 490 A 50 50 0 0 0 200 540 H 440 A 50 50 0 0 0 490 490 V 242" />
     <path d="M 260 540 V 400 A 60 60 0 0 1 380 400 V 540" />
