@@ -170,7 +170,7 @@
       const parts = value.split(":");
       
       // Validation: Format must be category:name:variant
-      if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
+      if (parts.length !== 3 || !parts[0] || !parts[1]) {
         el.innerHTML = `<span class="icon-missing" title="Invalid Format">☒</span>`;
         continue;
       }
