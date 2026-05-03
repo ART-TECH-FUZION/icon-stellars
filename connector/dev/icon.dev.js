@@ -33,7 +33,7 @@
   }
 
   const VERSION = getVersionFromScript();
-  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/icon-stellar@${VERSION}/sprites`;
+  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/icon-stellars@${VERSION}/sprites`;
   
   // Track loaded sprites and active network requests to prevent duplicates
   const loadedSprites = new Set();
