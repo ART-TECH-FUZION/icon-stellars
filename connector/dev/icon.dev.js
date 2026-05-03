@@ -1,8 +1,9 @@
 /**
  * ============================================================================
- * ICON-STELLAR - SVG ICON LIBRARY (PRODUCTION STRICT VERSION - NO CONSOLE)
+ * ICON-STELLAR - SVG ICON LIBRARY (PRODUCTION STRICT VERSION)
  * ============================================================================
  * Handles fetching, caching, and injecting SVG sprites from a CDN.
+ * Dynamically detects version from the script tag source.
  * Strictly enforces the "category:name:variant" format and handles missing icons.
  * Completely silent in the console for production environments.
  */
@@ -10,8 +11,29 @@
 (function () {
   "use strict";
 
-  // Base URL for fetching SVG sprites from the main branch
-  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/icon-stellar@latest/sprites`;
+  /**
+   * ============================================================================
+   * VERSION DETECTION
+   * ============================================================================
+   * Scans script tags to find the Icon-Stellar script and extracts its version.
+   * Fallback to 'latest' if no specific version is found.
+   */
+  function getVersionFromScript() {
+    const scripts = document.querySelectorAll("script");
+    for (let script of scripts) {
+      // Make it case-insensitive to avoid matching errors
+      if (script.src && script.src.toLowerCase().includes("icon-stellar")) {
+        const match = script.src.match(/@([^/]+)/);
+        if (match && match[1]) {
+          return match[1]; // e.g., returns '1.5.0' or 'main'
+        }
+      }
+    }
+    return "latest"; // Fallback version
+  }
+
+  const VERSION = getVersionFromScript();
+  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/icon-stellar@${VERSION}/sprites`;
   
   // Track loaded sprites and active network requests to prevent duplicates
   const loadedSprites = new Set();
@@ -21,25 +43,20 @@
    * ============================================================================
    * DOM INJECTION
    * ============================================================================
-   * Parses the raw SVG text and safely injects it into the top of the body tag.
    */
   function injectSprite(svgData, spriteFile) {
-    // Prevent injecting the same sprite multiple times
     if (document.querySelector(`svg[data-sprite="${spriteFile}"]`)) return;
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgData, "image/svg+xml");
     const svgNode = doc.querySelector("svg");
 
-    // Silently return if SVG format is invalid
     if (!svgNode) return;
 
-    // Hide the injected sprite visually but keep it readable by the browser
     svgNode.setAttribute("data-sprite", spriteFile);
     svgNode.style.cssText = "position: absolute; width: 0; height: 0; overflow: hidden;";
     svgNode.setAttribute("aria-hidden", "true");
 
-    // Ensure the document body exists before appending
     const inject = () => {
       if (document.body) {
         document.body.insertAdjacentElement("afterbegin", svgNode);
@@ -52,36 +69,32 @@
 
   /**
    * ============================================================================
-   * NETWORK FETCHING (WITH CACHE BUSTING)
+   * NETWORK FETCHING
    * ============================================================================
-   * Fetches the SVG sprite file from the CDN. Returns true if successful.
    */
   async function loadSprite(spriteFile) {
-    // If already loaded successfully, return true
     if (loadedSprites.has(spriteFile)) return true;
 
-    // If currently fetching, wait for the existing promise to resolve
     if (activeFetches.has(spriteFile)) {
       return await activeFetches.get(spriteFile);
     }
 
     const fetchPromise = (async () => {
       try {
-        // Appending timestamp to strictly bypass browser and CDN caching
-        const liveUrl = `${BASE_URL}/${spriteFile}?t=${new Date().getTime()}`;
+        const url = `${BASE_URL}/${spriteFile}`;
+        const response = await fetch(url);
         
-        const response = await fetch(liveUrl);
-        if (!response.ok) throw new Error("Network response was not ok");
+        if (!response.ok) throw new Error("Network error");
         
         const data = await response.text();
-        if (!data.includes("<svg")) throw new Error("Fetched file is not a valid SVG");
+        if (!data.includes("<svg")) throw new Error("Invalid SVG");
 
         injectSprite(data, spriteFile);
         loadedSprites.add(spriteFile);
         return true;
 
       } catch (error) {
-        // Silently fail and return false
+        // Silently fail
         return false;
       }
     })();
@@ -97,7 +110,6 @@
    * ============================================================================
    * STYLING
    * ============================================================================
-   * Injects default CSS rules to ensure icons scale properly and look aligned.
    */
   function injectDefaultStyles() {
     if (document.getElementById("icon-stellar-styles")) return;
@@ -128,13 +140,11 @@
    * ============================================================================
    * ELEMENT CREATION
    * ============================================================================
-   * Builds the `<svg><use></use></svg>` structure required to display the icon.
    */
   function createSVGElement(iconId) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
     
-    // Cross-browser compatibility for referencing the symbol ID
     use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", `#${iconId}`);
     use.setAttribute("href", `#${iconId}`);
     
@@ -147,7 +157,6 @@
    * ============================================================================
    * RENDERING LOGIC
    * ============================================================================
-   * Scans the DOM for elements with the 'data-icon' attribute and processes them.
    */
   async function renderIcons(rootElement = document) {
     const elements = rootElement.querySelectorAll("[data-icon]:not([data-icon-rendered])");
@@ -156,12 +165,11 @@
       const value = el.getAttribute("data-icon");
       if (!value) continue;
 
-      // Mark element as processed to avoid redundant rendering cycles
       el.setAttribute("data-icon-rendered", "true");
 
       const parts = value.split(":");
       
-      // STRICT RULE: User must provide all 3 parts (category, name, variant)
+      // STRICT RULE: Requires category, name, and variant
       if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
         el.innerHTML = `<span class="icon-missing" title="Invalid format">☒</span>`;
         continue;
@@ -174,16 +182,14 @@
       const spriteFile = `${category}.svg`;
       const iconId = `${name}-${variant}`;
 
-      // Await the fetching and injection of the required sprite
       const isSpriteLoaded = await loadSprite(spriteFile);
 
-      // VALIDATION: Check if sprite failed OR if the specific icon ID does not exist in the DOM
+      // Show missing box if file not found OR ID doesn't exist in SVG
       if (!isSpriteLoaded || !document.getElementById(iconId)) {
         el.innerHTML = `<span class="icon-missing" title="Icon not found">☒</span>`;
         continue;
       }
 
-      // Success: Render the SVG graphic
       const svg = createSVGElement(iconId);
       el.innerHTML = "";
       el.appendChild(svg);
@@ -194,7 +200,6 @@
    * ============================================================================
    * DYNAMIC DOM OBSERVATION
    * ============================================================================
-   * Listens for changes in the DOM (useful for frameworks or Elementor).
    */
   function observeDOMChanges() {
     const observer = new MutationObserver((mutations) => {
@@ -206,7 +211,6 @@
         }
       }
       if (shouldRender) {
-        // Debounce slightly to allow batches of nodes to load first
         setTimeout(() => renderIcons(), 50);
       }
     });
@@ -223,12 +227,9 @@
     injectDefaultStyles();
     renderIcons();
     observeDOMChanges();
-
-    // Secondary scan as a fallback for slow-loading page builders
     setTimeout(() => renderIcons(), 1500);
   }
 
-  // Ensure DOM is fully accessible before running
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
