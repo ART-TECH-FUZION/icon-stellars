@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" id="img-gallery-solid" fill="currentColor">
+  <path fill-rule="evenodd" clip-rule="evenodd" d="
+    M 160 80
+    H 480 A 80 80 0 0 1 560 160
+    V 480 A 80 80 0 0 1 480 560
+    H 160 A 80 80 0 0 1 80 480
+    V 160 A 80 80 0 0 1 160 80 Z
+    M 230 170 A 50 50 0 1 0 230 270 A 50 50 0 1 0 230 170 Z
+    M 160 480
+    L 220 384 Q 230 368 240 384
+    L 284 454 Q 292 466 300 454
+    L 372 338 Q 384 318 396 338
+    L 480 480 Z
+  " />
+</svg>
