@@ -1,11 +1,13 @@
 /**
  * ============================================================================
- * ICON-STELLAR - SVG ICON LIBRARY (PRODUCTION STRICT VERSION)
+ * ICON-STELLAR - SVG ICON LIBRARY (SMART FALLBACK VERSION)
  * ============================================================================
- * Handles fetching, caching, and injecting SVG sprites from a CDN.
- * Dynamically detects version from the script tag source.
- * Strictly enforces the "category:name:variant" format and handles missing icons.
- * Completely silent in the console for production environments.
+ * A professional, lightweight library to fetch and inject SVG sprites.
+ * Features:
+ * - Dynamic version detection from script source.
+ * - Automatic fallback to @latest if the specified version tag is missing.
+ * - MutationObserver for dynamic content (Elementor/React compatible).
+ * - Silent execution for production environments.
  */
 
 (function () {
@@ -15,27 +17,31 @@
    * ============================================================================
    * VERSION DETECTION
    * ============================================================================
-   * Scans script tags to find the Icon-Stellar script and extracts its version.
-   * Fallback to 'latest' if no specific version is found.
+   * Scans all <script> tags to find the Icon-Stellar loader and extracts 
+   * the version tag (e.g., @v1.0.0). Defaults to 'latest' if not found.
    */
   function getVersionFromScript() {
     const scripts = document.querySelectorAll("script");
     for (let script of scripts) {
-      // Make it case-insensitive to avoid matching errors
       if (script.src && script.src.toLowerCase().includes("icon-stellar")) {
         const match = script.src.match(/@([^/]+)/);
         if (match && match[1]) {
-          return match[1]; // e.g., returns '1.5.0' or 'main'
+          return match[1];
         }
       }
     }
-    return "latest"; // Fallback version
+    return "latest";
   }
 
-  const VERSION = getVersionFromScript();
-  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/icon-stellars@${VERSION}/sprites`;
+  // Configuration Constants
+  const DETECTED_VERSION = getVersionFromScript();
+  const REPO_PATH = "art-tech-fuzion/icon-stellars";
   
-  // Track loaded sprites and active network requests to prevent duplicates
+  // URL Construction: Primary (from script tag) and Fallback (latest)
+  const PRIMARY_BASE = `https://cdn.jsdelivr.net/gh/${REPO_PATH}@${DETECTED_VERSION}/sprites`;
+  const LATEST_BASE = `https://cdn.jsdelivr.net/gh/${REPO_PATH}@latest/sprites`;
+  
+  // State tracking to prevent redundant network requests and duplicate injections
   const loadedSprites = new Set();
   const activeFetches = new Map();
 
@@ -43,6 +49,7 @@
    * ============================================================================
    * DOM INJECTION
    * ============================================================================
+   * Parses the raw SVG string and injects it into the DOM as a hidden sprite.
    */
   function injectSprite(svgData, spriteFile) {
     if (document.querySelector(`svg[data-sprite="${spriteFile}"]`)) return;
@@ -53,6 +60,7 @@
 
     if (!svgNode) return;
 
+    // Set identifier and hide visually without breaking <use> references
     svgNode.setAttribute("data-sprite", spriteFile);
     svgNode.style.cssText = "position: absolute; width: 0; height: 0; overflow: hidden;";
     svgNode.setAttribute("aria-hidden", "true");
@@ -69,8 +77,10 @@
 
   /**
    * ============================================================================
-   * NETWORK FETCHING
+   * NETWORK FETCHING (WITH SMART FALLBACK)
    * ============================================================================
+   * Attempts to fetch the sprite using the detected version. If it returns 404,
+   * it retries using the @latest tag.
    */
   async function loadSprite(spriteFile) {
     if (loadedSprites.has(spriteFile)) return true;
@@ -81,21 +91,25 @@
 
     const fetchPromise = (async () => {
       try {
-        const url = `${BASE_URL}/${spriteFile}`;
-        const response = await fetch(url);
+        // Step 1: Attempt to load the specific version requested
+        let response = await fetch(`${PRIMARY_BASE}/${spriteFile}`);
         
-        if (!response.ok) throw new Error("Network error");
+        // Step 2: Fallback to @latest if primary fails (404) and was not already @latest
+        if (!response.ok && DETECTED_VERSION !== "latest") {
+          response = await fetch(`${LATEST_BASE}/${spriteFile}`);
+        }
+        
+        if (!response.ok) throw new Error("Resource not found on primary or latest");
         
         const data = await response.text();
-        if (!data.includes("<svg")) throw new Error("Invalid SVG");
+        if (!data.includes("<svg")) throw new Error("Invalid SVG content");
 
         injectSprite(data, spriteFile);
         loadedSprites.add(spriteFile);
         return true;
 
       } catch (error) {
-        // Silently fail
-        return false;
+        return false; // Silent failure allows the missing icon placeholder to show
       }
     })();
 
@@ -108,43 +122,28 @@
 
   /**
    * ============================================================================
-   * STYLING
+   * STYLING & HELPERS
    * ============================================================================
    */
+  
+  // Inject basic CSS for icon sizing and error display
   function injectDefaultStyles() {
     if (document.getElementById("icon-stellar-styles")) return;
-
     const style = document.createElement("style");
     style.id = "icon-stellar-styles";
     style.innerHTML = `
-      .is-icon {
-        width: 1em;
-        height: 1em;
-        fill: currentColor;
-        display: inline-block;
-        vertical-align: middle;
-      }
-      .icon-missing {
-        font-size: 1em;
-        display: inline-block;
-        vertical-align: middle;
-        font-family: sans-serif;
-        color: inherit;
-        opacity: 0.7;
-      }
+      .is-icon { width: 1em; height: 1em; fill: currentColor; display: inline-block; vertical-align: middle; }
+      .icon-missing { font-size: 1em; display: inline-block; vertical-align: middle; font-family: sans-serif; opacity: 0.7; }
     `;
     document.head.appendChild(style);
   }
 
-  /**
-   * ============================================================================
-   * ELEMENT CREATION
-   * ============================================================================
-   */
+  // Create the <svg><use></use></svg> element structure
   function createSVGElement(iconId) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
     
+    // Support for xlink:href (older browsers) and modern href
     use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", `#${iconId}`);
     use.setAttribute("href", `#${iconId}`);
     
@@ -155,8 +154,9 @@
 
   /**
    * ============================================================================
-   * RENDERING LOGIC
+   * RENDERING ENGINE
    * ============================================================================
+   * Finds elements with 'data-icon' and transforms them into SVG icons.
    */
   async function renderIcons(rootElement = document) {
     const elements = rootElement.querySelectorAll("[data-icon]:not([data-icon-rendered])");
@@ -169,24 +169,21 @@
 
       const parts = value.split(":");
       
-      // STRICT RULE: Requires category, name, and variant
+      // Validation: Format must be category:name:variant
       if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
-        el.innerHTML = `<span class="icon-missing" title="Invalid format">☒</span>`;
+        el.innerHTML = `<span class="icon-missing" title="Invalid Format">☒</span>`;
         continue;
       }
 
-      const category = parts[0];
-      const name = parts[1];
-      const variant = parts[2];
-
+      const category = parts[0], name = parts[1], variant = parts[2];
       const spriteFile = `${category}.svg`;
       const iconId = `${name}-${variant}`;
 
       const isSpriteLoaded = await loadSprite(spriteFile);
 
-      // Show missing box if file not found OR ID doesn't exist in SVG
+      // Verify sprite loaded and the specific ID exists in the hidden SVG
       if (!isSpriteLoaded || !document.getElementById(iconId)) {
-        el.innerHTML = `<span class="icon-missing" title="Icon not found">☒</span>`;
+        el.innerHTML = `<span class="icon-missing" title="Icon Not Found">☒</span>`;
         continue;
       }
 
@@ -198,38 +195,31 @@
 
   /**
    * ============================================================================
-   * DYNAMIC DOM OBSERVATION
+   * DOM OBSERVATION & INITIALIZATION
    * ============================================================================
    */
+  
+  // Watch for new elements added to the DOM (for Elementor AJAX or dynamic loaders)
   function observeDOMChanges() {
     const observer = new MutationObserver((mutations) => {
       let shouldRender = false;
       for (const mutation of mutations) {
-        if (mutation.addedNodes.length > 0) {
-          shouldRender = true;
-          break;
-        }
+        if (mutation.addedNodes.length > 0) { shouldRender = true; break; }
       }
-      if (shouldRender) {
-        setTimeout(() => renderIcons(), 50);
-      }
+      if (shouldRender) setTimeout(() => renderIcons(), 50);
     });
-
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  /**
-   * ============================================================================
-   * INITIALIZATION BOOTSTRAP
-   * ============================================================================
-   */
   function init() {
     injectDefaultStyles();
     renderIcons();
     observeDOMChanges();
+    // Extra scan for slow-loading builders
     setTimeout(() => renderIcons(), 1500);
   }
 
+  // Bootstrapping the application
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
