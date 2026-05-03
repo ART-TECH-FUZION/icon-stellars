@@ -1,2 +1,2 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" id="telegram-regular">
-<path fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" d="M320 72C183 72 72 183 72 320s111 248 248 248 248-111 248-248S457 72 320 72z M170 330l300-130-70 290-80-90-60 50-10-85z M250 365l220-165" /></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" id="telegram-regular" fill="none" stroke="currentColor" >
+<path stroke-width="32" stroke-linecap="round" stroke-linejoin="round" d="M320 72C183 72 72 183 72 320s111 248 248 248 248-111 248-248S457 72 320 72z M170 330l300-130-70 290-80-90-60 50-10-85z M250 365l220-165" /></svg>
