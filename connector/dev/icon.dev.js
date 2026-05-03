@@ -1,175 +1,112 @@
-// ======================================================
-// ICON-STELLAR - SVG ICON LIBRARY (STABLE + SMART VERSION)
-// ======================================================
+/**
+ * ============================================================================
+ * ICON-STELLAR - SVG ICON LIBRARY (PRODUCTION STRICT VERSION)
+ * ============================================================================
+ * Handles fetching, caching, and injecting SVG sprites from a CDN.
+ * Strictly enforces the "category:name:variant" format and handles missing icons.
+ */
 
 (function () {
+  "use strict";
 
-  // ==================================================
-  // 🔹 AUTO DETECT VERSION FROM SCRIPT SRC
-  // ==================================================
-  function getVersionFromScript() {
-    const scripts = document.querySelectorAll("script");
+  console.log("🔥 Icon-Stellar Script Initialized!");
 
-    for (let script of scripts) {
-      if (script.src && script.src.includes("icon-stellar")) {
-        const match = script.src.match(/@([^/]+)/);
-        if (match && match[1]) {
-          return match[1]; // e.g. v1.5.0
-        }
-      }
-    }
-
-    return "latest"; // fallback
-  }
-
-  // ==================================================
-  // 🔹 BASE CDN PATH
-  // ==================================================
-  const VERSION = getVersionFromScript();
-  const BASE = `https://cdn.jsdelivr.net/gh/ART-TECH-FUZION/icon-stellar@${VERSION}/sprites`;
-
-  // ==================================================
-  // 🔹 MEMORY TRACK (avoid duplicate loads)
-  // ==================================================
+  // Base URL for fetching SVG sprites from the main branch
+  const BASE_URL = `https://cdn.jsdelivr.net/gh/art-tech-fuzion/icon-stellars@latest/sprites`;
+  
+  // Track loaded sprites and active network requests to prevent duplicates
   const loadedSprites = new Set();
+  const activeFetches = new Map();
 
-  // ==================================================
-  // 🔹 LOCAL STORAGE CACHE
-  // ==================================================
-  function getCacheKey(spriteFile) {
-    return `icon-stellar-${VERSION}-${spriteFile}`;
-  }
-
-  function saveToCache(key, data) {
-    try {
-      localStorage.setItem(key, data);
-    } catch (e) {
-      console.warn("⚠️ Cache full");
-    }
-  }
-
-  function getFromCache(key) {
-    return localStorage.getItem(key);
-  }
-
-  // ==================================================
-  // 🔹 LOAD SPRITE (ASYNC + SAFE)
-  // ==================================================
-  async function loadSprite(spriteFile) {
-
-    // ✅ Already loaded
-    if (loadedSprites.has(spriteFile)) return;
-
-    const cacheKey = getCacheKey(spriteFile);
-
-    // ==================================================
-    // 🔹 STEP 1: Try local cache
-    // ==================================================
-    const cached = getFromCache(cacheKey);
-
-    if (cached) {
-      injectSprite(cached, spriteFile);
-      loadedSprites.add(spriteFile);
-      return;
-    }
-
-    // ==================================================
-    // 🔹 STEP 2: Fetch from CDN
-    // ==================================================
-    const url = `${BASE}/${spriteFile}`;
-
-    try {
-      console.log("🚀 Loading sprite:", url);
-
-      const res = await fetch(url);
-
-      if (!res.ok) throw new Error("Fetch failed");
-
-      const data = await res.text();
-
-      if (!data.includes("<svg")) {
-        throw new Error("Invalid SVG");
-      }
-
-      // Save cache
-      saveToCache(cacheKey, data);
-
-      // Inject
-      injectSprite(data, spriteFile);
-
-      loadedSprites.add(spriteFile);
-
-      console.log("✅ Sprite loaded:", spriteFile);
-
-    } catch (err) {
-
-      console.warn("⚠️ Version failed, fallback → latest");
-
-      // ==================================================
-      // 🔹 STEP 3: Fallback to latest
-      // ==================================================
-      try {
-        const fallbackUrl = `https://cdn.jsdelivr.net/gh/ART-TECH-FUZION/icon-stellar@latest/sprites/${spriteFile}`;
-
-        const res = await fetch(fallbackUrl);
-
-        if (!res.ok) throw new Error("Fallback failed");
-
-        const data = await res.text();
-
-        injectSprite(data, spriteFile);
-
-        loadedSprites.add(spriteFile);
-
-      } catch (e) {
-        console.error("❌ Sprite load failed:", spriteFile, e);
-      }
-    }
-  }
-
-  // ==================================================
-  // 🔹 INJECT SVG INTO DOM
-  // ==================================================
-  function injectSprite(data, spriteFile) {
-
-    // ❌ Prevent duplicate injection
-    if (document.querySelector(`[data-sprite="${spriteFile}"]`)) return;
+  /**
+   * ============================================================================
+   * DOM INJECTION
+   * ============================================================================
+   * Parses the raw SVG text and safely injects it into the top of the body tag.
+   */
+  function injectSprite(svgData, spriteFile) {
+    // Prevent injecting the same sprite multiple times
+    if (document.querySelector(`svg[data-sprite="${spriteFile}"]`)) return;
 
     const parser = new DOMParser();
-    const doc = parser.parseFromString(data, "image/svg+xml");
+    const doc = parser.parseFromString(svgData, "image/svg+xml");
+    const svgNode = doc.querySelector("svg");
 
-    const svg = doc.querySelector("svg");
-
-    if (!svg) {
-      console.error("❌ SVG parse failed");
+    if (!svgNode) {
+      console.error(`Icon-Stellar: Invalid SVG format detected in ${spriteFile}`);
       return;
     }
 
-    svg.style.display = "none";
-    svg.setAttribute("data-sprite", spriteFile);
+    // Hide the injected sprite visually but keep it readable by the browser
+    svgNode.setAttribute("data-sprite", spriteFile);
+    svgNode.style.cssText = "position: absolute; width: 0; height: 0; overflow: hidden;";
+    svgNode.setAttribute("aria-hidden", "true");
 
-    // 🔥 Wait for body ready (Elementor safe)
+    // Ensure the document body exists before appending
     const inject = () => {
       if (document.body) {
-        document.body.insertAdjacentElement("afterbegin", svg);
+        document.body.insertAdjacentElement("afterbegin", svgNode);
       } else {
         requestAnimationFrame(inject);
       }
     };
-
     inject();
   }
 
-  // ==================================================
-  // 🔹 DEFAULT ICON STYLE
-  // ==================================================
-  function injectDefaultStyles() {
+  /**
+   * ============================================================================
+   * NETWORK FETCHING (WITH CACHE BUSTING)
+   * ============================================================================
+   * Fetches the SVG sprite file from the CDN. Returns true if successful.
+   */
+  async function loadSprite(spriteFile) {
+    // If already loaded successfully, return true
+    if (loadedSprites.has(spriteFile)) return true;
 
-    if (document.getElementById("icon-stellar-style")) return;
+    // If currently fetching, wait for the existing promise to resolve
+    if (activeFetches.has(spriteFile)) {
+      return await activeFetches.get(spriteFile);
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        // Appending timestamp to strictly bypass browser and CDN caching
+        const liveUrl = `${BASE_URL}/${spriteFile}?t=${new Date().getTime()}`;
+        
+        const response = await fetch(liveUrl);
+        if (!response.ok) throw new Error("Network response was not ok");
+        
+        const data = await response.text();
+        if (!data.includes("<svg")) throw new Error("Fetched file is not a valid SVG");
+
+        injectSprite(data, spriteFile);
+        loadedSprites.add(spriteFile);
+        return true;
+
+      } catch (error) {
+        console.error(`Icon-Stellar: Failed to fetch sprite ${spriteFile}`, error);
+        return false;
+      }
+    })();
+
+    activeFetches.set(spriteFile, fetchPromise);
+    const success = await fetchPromise;
+    activeFetches.delete(spriteFile);
+
+    return success;
+  }
+
+  /**
+   * ============================================================================
+   * STYLING
+   * ============================================================================
+   * Injects default CSS rules to ensure icons scale properly and look aligned.
+   */
+  function injectDefaultStyles() {
+    if (document.getElementById("icon-stellar-styles")) return;
 
     const style = document.createElement("style");
-    style.id = "icon-stellar-style";
-
+    style.id = "icon-stellar-styles";
     style.innerHTML = `
       .is-icon {
         width: 1em;
@@ -178,72 +115,129 @@
         display: inline-block;
         vertical-align: middle;
       }
+      .icon-missing {
+        font-size: 1em;
+        display: inline-block;
+        vertical-align: middle;
+        font-family: sans-serif;
+        color: inherit;
+        opacity: 0.7;
+      }
     `;
-
     document.head.appendChild(style);
   }
 
-  // ==================================================
-  // 🔹 CREATE SVG ELEMENT
-  // ==================================================
-  function createSVG(iconId) {
-
+  /**
+   * ============================================================================
+   * ELEMENT CREATION
+   * ============================================================================
+   * Builds the `<svg><use></use></svg>` structure required to display the icon.
+   */
+  function createSVGElement(iconId) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-
+    
+    // Cross-browser compatibility for referencing the symbol ID
+    use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", `#${iconId}`);
     use.setAttribute("href", `#${iconId}`);
-
+    
     svg.appendChild(use);
     svg.classList.add("is-icon");
-
     return svg;
   }
 
-  // ==================================================
-  // 🔹 RENDER ICONS
-  // ==================================================
-  async function renderIcons() {
-
-    console.log("⚡ Rendering icons...");
-
-    const elements = document.querySelectorAll("[data-icon]");
+  /**
+   * ============================================================================
+   * RENDERING LOGIC
+   * ============================================================================
+   * Scans the DOM for elements with the 'data-icon' attribute and processes them.
+   */
+  async function renderIcons(rootElement = document) {
+    const elements = rootElement.querySelectorAll("[data-icon]:not([data-icon-rendered])");
 
     for (const el of elements) {
-
       const value = el.getAttribute("data-icon");
+      if (!value) continue;
 
-      if (!value || !value.includes(":")) continue;
+      // Mark element as processed to avoid redundant rendering cycles
+      el.setAttribute("data-icon-rendered", "true");
 
       const parts = value.split(":");
+      
+      // STRICT RULE: User must provide all 3 parts (category, name, variant)
+      if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
+        console.warn(`Icon-Stellar: Invalid format "${value}". Must be "category:name:variant".`);
+        el.innerHTML = `<span class="icon-missing" title="Invalid format">☒</span>`;
+        continue;
+      }
 
       const category = parts[0];
       const name = parts[1];
-      const variant = parts[2] || "regular";
+      const variant = parts[2];
 
       const spriteFile = `${category}.svg`;
       const iconId = `${name}-${variant}`;
 
-      // 🔥 Wait for sprite load
-      await loadSprite(spriteFile);
+      // Await the fetching and injection of the required sprite
+      const isSpriteLoaded = await loadSprite(spriteFile);
 
-      const svg = createSVG(iconId);
+      // VALIDATION: Check if sprite failed OR if the specific icon ID does not exist in the DOM
+      if (!isSpriteLoaded || !document.getElementById(iconId)) {
+        console.warn(`Icon-Stellar: Icon '${iconId}' not found in ${spriteFile}.`);
+        el.innerHTML = `<span class="icon-missing" title="Icon not found">☒</span>`;
+        continue;
+      }
 
+      // Success: Render the SVG graphic
+      const svg = createSVGElement(iconId);
       el.innerHTML = "";
       el.appendChild(svg);
     }
   }
 
-  // ==================================================
-  // 🔹 INIT (Elementor SAFE)
-  // ==================================================
+  /**
+   * ============================================================================
+   * DYNAMIC DOM OBSERVATION
+   * ============================================================================
+   * Listens for changes in the DOM (useful for frameworks or Elementor).
+   */
+  function observeDOMChanges() {
+    const observer = new MutationObserver((mutations) => {
+      let shouldRender = false;
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+          shouldRender = true;
+          break;
+        }
+      }
+      if (shouldRender) {
+        // Debounce slightly to allow batches of nodes to load first
+        setTimeout(() => renderIcons(), 50);
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  /**
+   * ============================================================================
+   * INITIALIZATION BOOTSTRAP
+   * ============================================================================
+   */
   function init() {
     injectDefaultStyles();
     renderIcons();
+    observeDOMChanges();
+
+    // Secondary scan as a fallback for slow-loading page builders
+    setTimeout(() => renderIcons(), 1500);
   }
 
-  // 🔥 Important: wait full load (Elementor fix)
-  window.addEventListener("load", () => {
-    setTimeout(init, 300);
-  });
+  // Ensure DOM is fully accessible before running
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 
 })();
