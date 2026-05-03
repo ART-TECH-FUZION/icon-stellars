@@ -118,7 +118,7 @@
 
   <!-- PROPERTY - S - REGULAR -->
   <symbol id="property-s-regular" viewBox="0 0 640 640">
-    <g fill="none" stroke="currentColor" stroke="20px">
+    <g fill="none" stroke="currentColor" stroke-width="20px">
 
       <path
         d="M 164 118 H 356 A 26 26 0 0 1 382 144 V 289.5 A 132 132 0 0 0 333.8 502 H 164 A 26 26 0 0 1 138 476 V 144 A 26 26 0 0 1 164 118 Z" />
