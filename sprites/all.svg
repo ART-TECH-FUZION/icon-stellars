@@ -27,7 +27,7 @@
 
   <!-- HOME - LIGHT -->
   <symbol id="home-light" viewBox="0 0 640 640">
-    <g stroke="currentColor" fill="none" stroke-width="20"><path d="M 80 300 L 320 100 L 560 300"/><path d="M 150 242 V 490 A 50 50 0 0 0 200 540 H 440 A 50 50 0 0 0 490 490 V 242"/><path d="M 260 540 V 400 A 60 60 0 0 1 380 400 V 540"/></g>
+    <g stroke="currentColor" fill="none" stroke-width="30"><path d="M 80 300 L 320 100 L 560 300"/><path d="M 150 242 V 490 A 50 50 0 0 0 200 540 H 440 A 50 50 0 0 0 490 490 V 242"/><path d="M 260 540 V 400 A 60 60 0 0 1 380 400 V 540"/></g>
   </symbol>
 
   <!-- HOME - REGULAR -->
