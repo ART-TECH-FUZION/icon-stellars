@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG Sprite Forge</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --bg: #0e0e11;
+    --bg-elevated: #16161a;
+    --bg-card: #1c1c22;
+    --fg: #ececf1;
+    --fg-muted: #72727e;
+    --fg-dim: #4a4a56;
+    --accent: #e8a43a;
+    --accent-glow: rgba(232, 164, 58, 0.15);
+    --accent-hover: #f0b654;
+    --danger: #e85454;
+    --danger-glow: rgba(232, 84, 84, 0.12);
+    --success: #3ae88a;
+    --success-glow: rgba(58, 232, 138, 0.12);
+    --border: #2a2a32;
+    --border-light: #33333d;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg); color: var(--fg);
+    min-height: 100vh; overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; top: -30%; left: -10%;
+    width: 60%; height: 60%;
+    background: radial-gradient(ellipse, rgba(232, 164, 58, 0.04) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: ''; position: fixed; bottom: -20%; right: -15%;
+    width: 50%; height: 50%;
+    background: radial-gradient(ellipse, rgba(232, 164, 58, 0.03) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  .app-container {
+    position: relative; z-index: 1;
+    max-width: 960px; margin: 0 auto; padding: 40px 24px 80px;
+  }
+  .app-header { text-align: center; margin-bottom: 48px; }
+  .app-header .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-glow);
+    border: 1px solid rgba(232, 164, 58, 0.2);
+    padding: 5px 14px; border-radius: 100px; margin-bottom: 20px;
+  }
+  .app-header h1 {
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 12px;
+  }
+  .app-header h1 span {
+    background: linear-gradient(135deg, var(--accent), #f0d078);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .app-header p {
+    color: var(--fg-muted); font-size: 16px; font-weight: 300;
+    max-width: 560px; margin: 0 auto; line-height: 1.6;
+  }
+
+  .drop-zone {
+    position: relative; border: 2px dashed var(--border-light);
+    border-radius: var(--radius-lg); background: var(--bg-elevated);
+    padding: 44px 32px 36px; text-align: center;
+    transition: all 0.3s ease; overflow: hidden; cursor: default;
+  }
+  .drop-zone::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, var(--accent-glow), transparent 70%);
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent); background: var(--bg-card);
+  }
+  .drop-zone:hover::before, .drop-zone.drag-over::before { opacity: 1; }
+  .drop-zone.drag-over { transform: scale(1.005); }
+  .drop-zone .icon-wrap {
+    position: relative; z-index: 1;
+    width: 72px; height: 72px; margin: 0 auto 18px;
+    border-radius: 50%; background: var(--accent-glow);
+    border: 1px solid rgba(232, 164, 58, 0.15);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .drop-zone.drag-over .icon-wrap {
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 10px 30px rgba(232, 164, 58, 0.2);
+  }
+  .drop-zone .icon-wrap i { font-size: 28px; color: var(--accent); }
+  .drop-zone .drop-title {
+    position: relative; z-index: 1; font-size: 18px; font-weight: 600; margin-bottom: 8px;
+  }
+  .drop-zone .drop-title strong { color: var(--accent); }
+  .drop-zone .drop-sub {
+    position: relative; z-index: 1; color: var(--fg-muted); font-size: 14px; font-weight: 300; line-height: 1.6;
+  }
+  .drop-zone .drop-features {
+    position: relative; z-index: 1;
+    display: flex; justify-content: center; gap: 10px; margin-top: 16px; flex-wrap: wrap;
+  }
+  .drop-zone .drop-feat {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; color: var(--fg-dim);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 100px;
+  }
+  .drop-zone .drop-feat i { font-size: 9px; color: var(--accent); }
+
+  .scan-overlay {
+    position: absolute; inset: 0; z-index: 5;
+    background: rgba(14, 14, 17, 0.88);
+    backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px; border-radius: var(--radius-lg);
+  }
+  .scan-overlay.active { display: flex; }
+  .scan-overlay .scan-ring {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .scan-overlay .scan-label { font-size: 14px; color: var(--fg-muted); }
+  .scan-overlay .scan-label span { color: var(--accent); font-weight: 600; }
+
+  .or-row {
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 18px; gap: 14px;
+  }
+  .or-row .or-line { width: 60px; height: 1px; background: var(--border); }
+  .or-row .or-text { font-size: 12px; color: var(--fg-dim); letter-spacing: 0.04em; }
+
+  .browse-row {
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 14px; gap: 12px; flex-wrap: wrap;
+  }
+  .browse-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 500;
+    color: var(--fg-muted); background: var(--bg-card);
+    border: 1px solid var(--border); padding: 10px 22px;
+    border-radius: 100px; cursor: pointer;
+    transition: all 0.2s ease; position: relative; overflow: hidden;
+  }
+  .browse-btn:hover {
+    color: var(--fg); border-color: var(--border-light);
+    background: var(--bg-elevated); box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  .browse-btn i { color: var(--accent); font-size: 14px; }
+  .browse-btn input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .browse-btn .btn-note {
+    font-size: 10px; color: var(--fg-dim); font-weight: 300; margin-left: 2px;
+  }
+
+  .file-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 28px; margin-bottom: 16px;
+    opacity: 0; transform: translateY(8px); transition: all 0.35s ease;
+  }
+  .file-bar.visible { opacity: 1; transform: translateY(0); }
+  .file-bar .count { font-size: 14px; color: var(--fg-muted); }
+  .file-bar .count span { color: var(--fg); font-weight: 600; }
+  .file-bar .clear-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; color: var(--danger); background: var(--danger-glow);
+    border: 1px solid rgba(232, 84, 84, 0.15);
+    padding: 6px 14px; border-radius: 100px; cursor: pointer; transition: all 0.2s ease;
+  }
+  .file-bar .clear-btn:hover { background: rgba(232, 84, 84, 0.2); border-color: rgba(232, 84, 84, 0.3); }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px; margin-bottom: 36px;
+  }
+  .preview-card {
+    position: relative; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 12px 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    transition: all 0.25s ease; animation: cardIn 0.35s ease backwards;
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: scale(0.9) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .preview-card:hover {
+    border-color: var(--border-light); transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+  .preview-card .remove-btn {
+    position: absolute; top: 6px; right: 6px;
+    width: 24px; height: 24px; border-radius: 50%; border: none;
+    background: var(--danger-glow); color: var(--danger);
+    font-size: 11px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: all 0.2s ease;
+  }
+  .preview-card:hover .remove-btn { opacity: 1; }
+  .preview-card .remove-btn:hover { background: var(--danger); color: #fff; }
+  .preview-card .svg-preview {
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .preview-card .svg-preview svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }
+  .preview-card .file-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--fg-muted);
+    text-align: center; word-break: break-all; line-height: 1.3;
+    max-height: 26px; overflow: hidden; width: 100%;
+  }
+  .preview-card .file-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px; color: var(--fg-dim);
+    text-align: center; word-break: break-all; line-height: 1.3;
+    max-height: 22px; overflow: hidden; width: 100%; opacity: 0.6;
+  }
+  .preview-card .file-id-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px; color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(232, 164, 58, 0.15);
+    padding: 2px 7px; border-radius: 100px;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .action-section { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 8px; }
+  .create-btn {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px; font-weight: 600; color: var(--bg);
+    background: linear-gradient(135deg, var(--accent), #d4922e);
+    border: none; padding: 16px 40px; border-radius: 100px;
+    cursor: pointer; transition: all 0.3s ease; overflow: hidden;
+    opacity: 0; transform: translateY(12px); pointer-events: none;
+  }
+  .create-btn.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
+  .create-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--accent-hover), #e8a43a);
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .create-btn:hover::before { opacity: 1; }
+  .create-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(232, 164, 58, 0.3); }
+  .create-btn:active { transform: translateY(0) scale(0.98); }
+  .create-btn span, .create-btn i { position: relative; z-index: 1; }
+  .create-btn.processing { pointer-events: none; }
+  .create-btn.processing span { display: none; }
+  .create-btn.processing i.fa-bolt { display: none; }
+  .create-btn .spinner {
+    display: none; position: relative; z-index: 1;
+    width: 20px; height: 20px;
+    border: 2.5px solid rgba(14,14,17,0.2);
+    border-top-color: var(--bg); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .create-btn.processing .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-section {
+    margin-top: 48px; opacity: 0; transform: translateY(20px);
+    transition: all 0.5s ease; pointer-events: none;
+  }
+  .result-section.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
+  .result-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  }
+  .result-header h2 {
+    font-size: 22px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .result-header h2 .check {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--success-glow);
+    border: 1px solid rgba(58, 232, 138, 0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--success); font-size: 13px;
+  }
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .result-actions button {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 500;
+    padding: 9px 20px; border-radius: 100px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    transition: all 0.2s ease;
+  }
+  .btn-download { background: var(--accent); color: var(--bg); border: none; }
+  .btn-download:hover { background: var(--accent-hover); box-shadow: 0 4px 16px rgba(232, 164, 58, 0.25); }
+  .btn-copy { background: transparent; color: var(--fg-muted); border: 1px solid var(--border-light); }
+  .btn-copy:hover { color: var(--fg); border-color: var(--fg-dim); background: var(--bg-elevated); }
+
+  .sprite-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px; margin-bottom: 24px;
+    padding: 20px; background: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .sprite-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px; padding: 12px 8px; border-radius: var(--radius-sm);
+    background: var(--bg-card); border: 1px solid var(--border);
+    transition: all 0.2s ease;
+  }
+  .sprite-item:hover { border-color: var(--accent); background: rgba(232, 164, 58, 0.04); }
+  .sprite-item .sprite-icon {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center; color: var(--fg);
+  }
+  .sprite-item .sprite-icon svg { width: 100%; height: 100%; }
+  .sprite-item .sprite-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: var(--fg-dim);
+    text-align: center; word-break: break-all; line-height: 1.3;
+  }
+
+  .code-block {
+    position: relative; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  }
+  .code-block-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-block-header .lang {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .code-block-header .size-info {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--fg-dim);
+  }
+  .code-block pre {
+    padding: 18px; overflow-x: auto; max-height: 420px; overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 1.7; color: var(--fg-muted); tab-size: 2;
+  }
+  .code-block pre::-webkit-scrollbar { width: 6px; height: 6px; }
+  .code-block pre::-webkit-scrollbar-track { background: transparent; }
+  .code-block pre::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+  .stats-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--fg-muted);
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 7px 14px; border-radius: 100px;
+  }
+  .stat-chip i { color: var(--accent); font-size: 11px; }
+
+  .toast-container {
+    position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .toast {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px; background: var(--bg-card);
+    border: 1px solid var(--border-light); border-radius: var(--radius);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    font-size: 14px; color: var(--fg); animation: toastIn 0.35s ease; max-width: 400px;
+  }
+  .toast.toast-out { animation: toastOut 0.3s ease forwards; }
+  .toast.success i { color: var(--success); }
+  .toast.error i { color: var(--danger); }
+  .toast.info i { color: var(--accent); }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes toastOut {
+    to { opacity: 0; transform: translateY(10px) scale(0.95); }
+  }
+
+  .particles-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .particle {
+    position: absolute; width: 2px; height: 2px;
+    background: var(--accent); border-radius: 50%; opacity: 0;
+    animation: particleFloat linear infinite;
+  }
+  @keyframes particleFloat {
+    0% { opacity: 0; transform: translateY(100vh) scale(0); }
+    10% { opacity: 0.4; }
+    90% { opacity: 0.1; }
+    100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+  }
+
+  @media (max-width: 600px) {
+    .app-container { padding: 24px 16px 60px; }
+    .drop-zone { padding: 36px 20px; }
+    .drop-zone .drop-features { gap: 6px; }
+    .preview-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+    .create-btn { padding: 14px 28px; font-size: 15px; }
+    .result-header { flex-direction: column; align-items: flex-start; }
+    .sprite-preview-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+    .browse-row { flex-direction: column; align-items: stretch; }
+    .browse-btn { justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important; transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="particles-bg" id="particlesBg" aria-hidden="true"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="badge"><i class="fa-solid fa-cube"></i> Sprite Generator</div>
+    <h1>SVG Sprite <span>Forge</span></h1>
+    <p>Drop files or entire folders — nested subfolders are scanned recursively. Everything becomes one sorted sprite.</p>
+  </header>
+
+  <section>
+    <div class="drop-zone" id="dropZone">
+      <div class="icon-wrap"><i class="fa-solid fa-layer-group"></i></div>
+      <div class="drop-title"><strong>Drag & drop</strong> SVG files or folders here</div>
+      <div class="drop-sub">
+        Select multiple folders at once from your file manager — all nested subfolders are scanned automatically
+      </div>
+      <div class="drop-features">
+        <div class="drop-feat"><i class="fa-solid fa-check"></i> Multiple folders</div>
+        <div class="drop-feat"><i class="fa-solid fa-check"></i> Infinite nesting</div>
+        <div class="drop-feat"><i class="fa-solid fa-check"></i> SVG files</div>
+        <div class="drop-feat"><i class="fa-solid fa-check"></i> Mixed drop</div>
+      </div>
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="scan-ring"></div>
+        <div class="scan-label">Scanning... <span id="scanCount">0</span> SVGs found</div>
+      </div>
+    </div>
+
+    <div class="or-row">
+      <div class="or-line"></div>
+      <div class="or-text">or browse manually</div>
+      <div class="or-line"></div>
+    </div>
+
+    <div class="browse-row">
+      <button class="browse-btn" aria-label="Browse SVG files">
+        <i class="fa-regular fa-file"></i>
+        <span>Browse Files</span>
+        <input type="file" id="fileInput" accept=".svg,image/svg+xml" multiple aria-label="Choose SVG files">
+      </button>
+      <button class="browse-btn" aria-label="Browse a folder">
+        <i class="fa-solid fa-folder-open"></i>
+        <span>Browse Folder</span>
+        <span class="btn-note">(single)</span>
+        <input type="file" id="folderInput" webkitdirectory directory multiple aria-label="Choose a folder">
+      </button>
+    </div>
+  </section>
+
+  <div class="file-bar" id="fileBar">
+    <div class="count"><span id="fileCount">0</span> SVG files uploaded</div>
+    <button class="clear-btn" id="clearAllBtn" aria-label="Remove all files">
+      <i class="fa-solid fa-trash-can"></i> Clear All
+    </button>
+  </div>
+
+  <div class="preview-grid" id="previewGrid"></div>
+
+  <div class="action-section">
+    <button class="create-btn" id="createBtn" aria-label="Create sprite file">
+      <i class="fa-solid fa-bolt"></i>
+      <span>Start Creating Sprite File</span>
+      <div class="spinner"></div>
+    </button>
+  </div>
+
+  <section class="result-section" id="resultSection" aria-label="Sprite result">
+    <div class="result-header">
+      <h2><span class="check"><i class="fa-solid fa-check"></i></span> Sprite File Ready</h2>
+      <div class="result-actions">
+        <button class="btn-copy" id="copyBtn" aria-label="Copy sprite code">
+          <i class="fa-regular fa-clipboard"></i> Copy Code
+        </button>
+        <button class="btn-download" id="downloadBtn" aria-label="Download sprite file">
+          <i class="fa-solid fa-download"></i> Download SVG
+        </button>
+      </div>
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="sprite-preview-grid" id="spritePreviewGrid"></div>
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="lang">svg</span>
+        <span class="size-info" id="codeSize"></span>
+      </div>
+      <pre id="codeOutput"></pre>
+    </div>
+  </section>
+</div>
+
+<script>
+  const uploadedFiles = [];
+  let generatedSprite = '';
+  let fileIdCounter = 0;
+
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const folderInput = document.getElementById('folderInput');
+  const scanOverlay = document.getElementById('scanOverlay');
+  const scanCountEl = document.getElementById('scanCount');
+  const fileBar = document.getElementById('fileBar');
+  const fileCountEl = document.getElementById('fileCount');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  const previewGrid = document.getElementById('previewGrid');
+  const createBtn = document.getElementById('createBtn');
+  const resultSection = document.getElementById('resultSection');
+  const copyBtn = document.getElementById('copyBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const statsRow = document.getElementById('statsRow');
+  const spritePreviewGrid = document.getElementById('spritePreviewGrid');
+  const codeOutput = document.getElementById('codeOutput');
+  const codeSize = document.getElementById('codeSize');
+  const toastContainer = document.getElementById('toastContainer');
+
+  (function() {
+    const c = document.getElementById('particlesBg');
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement('div');
+      p.classList.add('particle');
+      p.style.left = Math.random() * 100 + '%';
+      p.style.width = p.style.height = (1.5 + Math.random() * 2) + 'px';
+      p.style.animationDuration = (12 + Math.random() * 20) + 's';
+      p.style.animationDelay = (Math.random() * 15) + 's';
+      c.appendChild(p);
+    }
+  })();
+
+  function showToast(message, type = 'info') {
+    const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' };
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<i class="fa-solid ${icons[type]}"></i><span>${message}</span>`;
+    toastContainer.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('toast-out');
+      toast.addEventListener('animationend', () => toast.remove());
+    }, 3500);
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  function sanitizeToId(filename) {
+    return filename
+      .replace(/\.svg$/i, '')
+      .replace(/[_\s]+/g, '-')
+      .replace(/[^a-zA-Z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'icon-' + fileIdCounter;
+  }
+
+  function toCommentLabel(id) {
+    return id.replace(/-/g, ' - ').toUpperCase();
+  }
+
+  function readSvgFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('Failed'));
+      reader.readAsText(file);
+    });
+  }
+
+  function extractSvgContent(rawSvg, filename) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(rawSvg, 'image/svg+xml');
+    const svgEl = doc.querySelector('svg');
+    if (!svgEl) return null;
+
+    let svgId = svgEl.getAttribute('id');
+    if (!svgId) svgId = sanitizeToId(filename);
+
+    let viewBox = svgEl.getAttribute('viewBox');
+    if (!viewBox) {
+      const w = parseFloat(svgEl.getAttribute('width')) || 24;
+      const h = parseFloat(svgEl.getAttribute('height')) || 24;
+      viewBox = `0 0 ${w} ${h}`;
+    }
+
+    // Inner content nikalo — xmlns root pe hi rahega, andar nahi
+    let inner = '';
+    for (const child of svgEl.childNodes) {
+      inner += new XMLSerializer().serializeToString(child);
+    }
+
+    // Inner content se xmlns hata do — yeh sirf root <svg> pe hona chahiye
+    // XMLSerializer child elements serialize karte waqt xmlns propagate kar deta hai
+    // kyunki wo apne parent context se bahar hain
+    inner = inner.replace(/\s+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/g, '');
+    // xmlns:xlink bhi hata do agar kisi inner element par hai
+    inner = inner.replace(/\s+xmlns:xlink="http:\/\/www\.w3\.org\/1999\/xlink"/g, '');
+
+    return { id: svgId, viewBox, inner };
+  }
+
+  // Recursive folder reading
+  function getFileFromEntry(entry) {
+    return new Promise((resolve, reject) => {
+      entry.file(file => resolve(file), reject);
+    });
+  }
+
+  function readAllDirectoryEntries(reader) {
+    return new Promise((resolve, reject) => {
+      const allEntries = [];
+      (function readBatch() {
+        reader.readEntries(entries => {
+          if (entries.length === 0) resolve(allEntries);
+          else { allEntries.push(...entries); readBatch(); }
+        }, reject);
+      })();
+    });
+  }
+
+  async function readEntryRecursive(entry, collectedFiles, pathPrefix) {
+    if (entry.isFile) {
+      const file = await getFileFromEntry(entry);
+      file._relativePath = pathPrefix ? pathPrefix + '/' + file.name : file.name;
+      collectedFiles.push(file);
+    } else if (entry.isDirectory) {
+      const dirPath = pathPrefix ? pathPrefix + '/' + entry.name : entry.name;
+      const reader = entry.createReader();
+      const entries = await readAllDirectoryEntries(reader);
+      for (const child of entries) {
+        await readEntryRecursive(child, collectedFiles, dirPath);
+      }
+    }
+  }
+
+  async function collectFromDrop(dataTransfer) {
+    const items = dataTransfer.items;
+    const allFiles = [];
+    if (items && items.length > 0 && typeof items[0].webkitGetAsEntry === 'function') {
+      const entries = [];
+      for (let i = 0; i < items.length; i++) {
+        const entry = items[i].webkitGetAsEntry();
+        if (entry) entries.push(entry);
+      }
+      for (const entry of entries) {
+        await readEntryRecursive(entry, allFiles, '');
+      }
+    } else {
+      for (let i = 0; i < dataTransfer.files.length; i++) {
+        allFiles.push(dataTransfer.files[i]);
+      }
+    }
+    return allFiles;
+  }
+
+  function showScan() { scanCountEl.textContent = '0'; scanOverlay.classList.add('active'); }
+  function updateScanCount(n) { scanCountEl.textContent = n; }
+  function hideScan() { scanOverlay.classList.remove('active'); }
+
+  async function handleFiles(files) {
+    const svgFiles = Array.from(files).filter(f =>
+      f.type === 'image/svg+xml' || f.name.toLowerCase().endsWith('.svg')
+    );
+    if (svgFiles.length === 0) { showToast('No SVG files found.', 'error'); return; }
+
+    const needsOverlay = svgFiles.length > 10;
+    if (needsOverlay) showScan();
+
+    let addedCount = 0, scannedCount = 0;
+    for (const file of svgFiles) {
+      try {
+        const content = await readSvgFile(file);
+        const relativePath = file._relativePath || file.webkitRelativePath || file.name;
+        const extracted = extractSvgContent(content, file.name);
+        const fileId = extracted ? extracted.id : sanitizeToId(file.name);
+        uploadedFiles.push({
+          id: fileIdCounter++, name: file.name, path: relativePath,
+          size: file.size, content: content, svgId: fileId
+        });
+        addedCount++; scannedCount++;
+        if (needsOverlay) updateScanCount(scannedCount);
+      } catch { showToast(`Failed to read "${file.name}"`, 'error'); }
+    }
+    if (needsOverlay) hideScan();
+    if (addedCount > 0) { showToast(`${addedCount} SVG file${addedCount > 1 ? 's' : ''} uploaded`, 'success'); updateUI(); }
+    fileInput.value = ''; folderInput.value = '';
+  }
+
+  function updateUI() {
+    const count = uploadedFiles.length;
+    fileBar.classList.toggle('visible', count > 0);
+    fileCountEl.textContent = count;
+    createBtn.classList.toggle('visible', count >= 1);
+    resultSection.classList.remove('visible');
+    renderPreviews();
+  }
+
+  function renderPreviews() {
+    previewGrid.innerHTML = '';
+    uploadedFiles.forEach((file, index) => {
+      const card = document.createElement('div');
+      card.className = 'preview-card';
+      card.style.animationDelay = (index * 0.02) + 's';
+      const safePreview = createSafePreviewSvg(file.content);
+      const showPath = file.path !== file.name;
+      card.innerHTML = `
+        <button class="remove-btn" data-id="${file.id}" aria-label="Remove ${file.name}">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="svg-preview">${safePreview}</div>
+        <div class="file-name" title="${file.name}">${file.name}</div>
+        ${showPath ? `<div class="file-path" title="${file.path}">${file.path}</div>` : ''}
+        <div class="file-id-tag" title="ID: ${file.svgId}">${file.svgId}</div>
+      `;
+      previewGrid.appendChild(card);
+    });
+    previewGrid.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = parseInt(btn.dataset.id);
+        const idx = uploadedFiles.findIndex(f => f.id === id);
+        if (idx !== -1) {
+          const name = uploadedFiles[idx].name;
+          uploadedFiles.splice(idx, 1);
+          showToast(`Removed "${name}"`, 'info');
+          updateUI();
+        }
+      });
+    });
+  }
+
+  function createSafePreviewSvg(rawSvg) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(rawSvg, 'image/svg+xml');
+    const svgEl = doc.querySelector('svg');
+    if (!svgEl) return '<span style="color:var(--danger);font-size:11px;">Invalid</span>';
+    svgEl.querySelectorAll('script, foreignObject').forEach(el => el.remove());
+    svgEl.querySelectorAll('*').forEach(el => {
+      for (const attr of Array.from(el.attributes)) {
+        if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+      }
+    });
+    svgEl.setAttribute('width', '48');
+    svgEl.setAttribute('height', '48');
+    svgEl.removeAttribute('id');
+    svgEl.style.maxWidth = '100%';
+    svgEl.style.maxHeight = '100%';
+    return svgEl.outerHTML;
+  }
+
+  // Sprite generation — alphabetical + clean xmlns
+  function generateSprite() {
+    const sorted = [...uploadedFiles].sort((a, b) =>
+      (a.svgId || '').toLowerCase().localeCompare((b.svgId || '').toLowerCase())
+    );
+
+    const symbols = [];
+    const ids = [];
+    let totalOriginalSize = 0;
+
+    for (const file of sorted) {
+      const extracted = extractSvgContent(file.content, file.name);
+      if (!extracted) { showToast(`Skipping "${file.name}" — invalid SVG`, 'error'); continue; }
+
+      let finalId = extracted.id;
+      if (ids.includes(finalId)) {
+        let suffix = 2;
+        let tempId = finalId + '-' + suffix;
+        while (ids.includes(tempId)) { suffix++; tempId = finalId + '-' + suffix; }
+        finalId = tempId;
+      }
+      ids.push(finalId);
+
+      const commentLabel = toCommentLabel(finalId);
+      const indentedInner = extracted.inner.split('\n').map(l => '    ' + l).join('\n');
+
+      symbols.push(
+        `  <!-- ${commentLabel} -->\n  <symbol id="${finalId}" viewBox="${extracted.viewBox}" fill="currentColor">\n${indentedInner}\n  </symbol>`
+      );
+      totalOriginalSize += file.size;
+    }
+
+    if (symbols.length === 0) { showToast('No valid SVGs to process.', 'error'); return null; }
+
+    const spriteContent = `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">\n\n${symbols.join('\n\n')}\n\n</svg>`;
+    const spriteSize = new Blob([spriteContent]).size;
+
+    return {
+      content: spriteContent, symbolCount: symbols.length, ids,
+      originalSize: totalOriginalSize, spriteSize,
+      savings: totalOriginalSize > 0 ? Math.max(0, ((1 - spriteSize / totalOriginalSize) * 100)) : 0
+    };
+  }
+
+  function renderResult(result) {
+    statsRow.innerHTML = `
+      <div class="stat-chip"><i class="fa-solid fa-icons"></i> ${result.symbolCount} symbols</div>
+      <div class="stat-chip"><i class="fa-solid fa-arrow-down-wide-short"></i> Alphabetical</div>
+      <div class="stat-chip"><i class="fa-solid fa-file"></i> ${formatSize(result.spriteSize)}</div>
+      <div class="stat-chip"><i class="fa-solid fa-compress"></i> ${result.savings.toFixed(1)}% smaller</div>
+    `;
+    spritePreviewGrid.innerHTML = '';
+    result.ids.forEach(id => {
+      const item = document.createElement('div');
+      item.className = 'sprite-item';
+      item.innerHTML = `
+        <div class="sprite-icon"><svg><use href="#${id}"></use></svg></div>
+        <div class="sprite-id">#${id}</div>
+      `;
+      spritePreviewGrid.appendChild(item);
+    });
+    let spriteInject = document.getElementById('injected-sprite');
+    if (!spriteInject) {
+      spriteInject = document.createElement('div');
+      spriteInject.id = 'injected-sprite';
+      spriteInject.style.display = 'none';
+      document.body.appendChild(spriteInject);
+    }
+    spriteInject.innerHTML = result.content;
+    codeOutput.textContent = result.content;
+    codeSize.textContent = formatSize(result.spriteSize);
+    resultSection.classList.add('visible');
+    setTimeout(() => resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+
+  // Events
+  let dragCounter = 0;
+  dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); dragCounter++; dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+  dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dragCounter--; if (dragCounter <= 0) { dragCounter = 0; dropZone.classList.remove('drag-over'); } });
+  dropZone.addEventListener('drop', async (e) => {
+    e.preventDefault(); e.stopPropagation(); dragCounter = 0; dropZone.classList.remove('drag-over');
+    const allFiles = await collectFromDrop(e.dataTransfer);
+    if (allFiles.length === 0) { showToast('Nothing to process.', 'error'); return; }
+    const svgCount = allFiles.filter(f => f.type === 'image/svg+xml' || f.name.toLowerCase().endsWith('.svg')).length;
+    if (svgCount === 0) { showToast('No SVG files found in dropped items.', 'error'); return; }
+    handleFiles(allFiles);
+  });
+  fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleFiles(e.target.files); });
+  folderInput.addEventListener('change', (e) => {
+    if (e.target.files.length === 0) return;
+    const files = Array.from(e.target.files);
+    const svgCount = files.filter(f => f.type === 'image/svg+xml' || f.name.toLowerCase().endsWith('.svg')).length;
+    if (svgCount === 0) { showToast('No SVG files found in this folder.', 'error'); folderInput.value = ''; return; }
+    handleFiles(files);
+  });
+  clearAllBtn.addEventListener('click', () => { uploadedFiles.length = 0; resultSection.classList.remove('visible'); updateUI(); showToast('All files cleared', 'info'); });
+  createBtn.addEventListener('click', async () => {
+    if (uploadedFiles.length === 0) return;
+    createBtn.classList.add('processing');
+    await new Promise(r => setTimeout(r, 800));
+    const result = generateSprite();
+    createBtn.classList.remove('processing');
+    if (result) { generatedSprite = result.content; renderResult(result); showToast(`Sprite created with ${result.symbolCount} symbols`, 'success'); }
+  });
+  copyBtn.addEventListener('click', async () => {
+    if (!generatedSprite) return;
+    try {
+      await navigator.clipboard.writeText(generatedSprite);
+      showToast('Sprite code copied to clipboard', 'success');
+      copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+      setTimeout(() => { copyBtn.innerHTML = '<i class="fa-regular fa-clipboard"></i> Copy Code'; }, 2000);
+    } catch {
+      const ta = document.createElement('textarea'); ta.value = generatedSprite;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      showToast('Sprite code copied to clipboard', 'success');
+    }
+  });
+  downloadBtn.addEventListener('click', () => {
+    if (!generatedSprite) return;
+    const blob = new Blob([generatedSprite], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'sprite.svg';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('sprite.svg downloaded', 'success');
+  });
+
+  updateUI();
+</script>
+</body>
+</html>
