@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" id="open-book-regular">
+    <g fill="none" stroke="currentColor" stroke-width="40" stroke-linecap="round"
+        stroke-linejoin="round">
+         <path
+        d="M80 165C160 125 240 125 320 165C400 125 480 125 560 165V505C480 465 400 465 320 505C240 465 160 465 80 505V165Z"/>
+        <path d="M320 165V505"/>
+        <path d="M160 305H260"/>
+        <path d="M160 405H240"/>
+        <path d="M380 305H480"/>
+        <path d="M380 405H460"/>
+    </g>
+</svg>
