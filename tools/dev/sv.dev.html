@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -102,7 +102,7 @@
         .btn--icon { padding: 7px 8px; min-width: 32px; justify-content: center; }
         .btn--xs { padding: 5px 10px; font-size: 0.72rem; }
 
-        /* === MAIN GRID — SAB EK SAATH === */
+        /* === MAIN GRID === */
         .workspace {
             flex: 1; display: grid; min-height: 0;
             grid-template-columns: 1fr 1.3fr;
@@ -203,6 +203,7 @@
             background-size: 16px 16px;
             background-position: 0 0, 0 8px, 8px -8px, -8px 0;
         }
+        .preview-zone.bg-custom { background-image: none !important; }
 
         .preview-inner {
             display: flex; flex-direction: column; align-items: center; gap: 20px;
@@ -217,7 +218,7 @@
         .empty-state i { font-size: 2.5rem; opacity: 0.3; }
         .empty-state p { font-size: 0.85rem; max-width: 220px; line-height: 1.6; opacity: 0.6; }
 
-        /* === SPRITE GRID — SAB EK SAATH DIKHE === */
+        /* === SPRITE GRID === */
         .sprite-grid {
             display: none; flex-wrap: wrap; gap: 10px; padding: 16px;
             border-top: 1px solid var(--border); background: rgba(0,0,0,0.15);
@@ -309,6 +310,21 @@
         .dd-item:hover { background: var(--accent-glow); color: var(--fg); }
         .dd-item i { width: 18px; text-align: center; color: var(--accent); font-size: 0.8rem; }
 
+        /* === COLOR PICKER === */
+        .color-picker-wrap {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-xs);
+            background: var(--bg-card); cursor: pointer; transition: all 0.2s ease;
+        }
+        .color-picker-wrap:hover { border-color: var(--border-hover); }
+        .color-picker-wrap input[type="color"] {
+            width: 22px; height: 22px; border: none; border-radius: 50%;
+            background: none; cursor: pointer; padding: 0; appearance: none;
+        }
+        .color-picker-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-picker-wrap input[type="color"]::-webkit-color-swatch { border: 1px solid var(--border); border-radius: 50%; }
+        .color-picker-wrap span { font-size: 0.72rem; color: var(--fg-dim); }
+
         /* === RESPONSIVE === */
         @media (max-width: 860px) {
             .workspace { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
@@ -319,10 +335,32 @@
             .toolbar-strip { padding: 8px 14px; }
             .statusbar { padding: 0 14px; }
         }
+        @media (max-width: 520px) {
+            header { height: 48px; }
+            .logo-name { font-size: 0.95rem; }
+            .logo-mark { width: 28px; height: 28px; font-size: 12px; }
+            .btn { padding: 6px 10px; font-size: 0.72rem; }
+            .toolbar-strip { padding: 6px 10px; gap: 4px; }
+            .toolbar-left { flex-wrap: wrap; }
+            .kbd-hint { display: none; }
+            .panel-head { padding: 0 12px; height: 36px; }
+            .preview-foot { padding: 6px 12px; }
+            .statusbar { height: 24px; font-size: 0.6rem; }
+            .code-area { font-size: 0.72rem; padding: 10px 12px; }
+            .line-nums { width: 36px; font-size: 0.68rem; padding: 10px 4px 10px 0; }
+            .sprite-grid { padding: 10px; gap: 8px; }
+            .sprite-card { padding: 10px 12px; min-width: 70px; }
+            .toast-box { bottom: 20px; right: 12px; }
+        }
+        @media (max-width: 380px) {
+            .btn span.hm { display: none; }
+            .toolbar-left .btn { padding: 5px 7px; }
+        }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
     </style>
+<base target="_blank">
 </head>
 <body>
     <div class="ambient"></div>
@@ -337,7 +375,7 @@
             </div>
             <div class="header-actions">
                 <div class="dd">
-                    <button class="btn" id="sampleBtn" aria-label="Sample load karein">
+                    <button class="btn" id="sampleBtn" aria-label="Load sample">
                         <i class="fa-solid fa-flask"></i><span class="hm">Samples</span>
                         <i class="fa-solid fa-chevron-down" style="font-size:0.55rem;opacity:0.5;"></i>
                     </button>
@@ -363,6 +401,8 @@
                     <div class="sep"></div>
                     <button class="btn btn--xs" id="dlSvg"><i class="fa-solid fa-download"></i><span class="hm">SVG</span></button>
                     <button class="btn btn--xs" id="dlPng"><i class="fa-solid fa-image"></i><span class="hm">PNG</span></button>
+                    <div class="sep"></div>
+                    <button class="btn btn--xs" id="minifyBtn"><i class="fa-solid fa-compress"></i><span class="hm">Minify</span></button>
                 </div>
                 <div class="toolbar-right">
                     <span class="kbd-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Preview</span>
@@ -379,7 +419,7 @@
                     <div class="editor-wrap">
                         <div class="line-nums" id="ln" aria-hidden="true">1</div>
                         <textarea class="code-area" id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
-                            placeholder="Apna SVG sprite code yahan paste karein..." aria-label="SVG code editor"></textarea>
+                            placeholder="Paste your SVG sprite code here..." aria-label="SVG code editor"></textarea>
                     </div>
                     <div class="error-strip" id="errBar"><i class="fa-solid fa-circle-exclamation"></i><p id="errTxt"></p></div>
                 </div>
@@ -389,21 +429,27 @@
             <div class="panel">
                 <div class="panel-head">
                     <div class="panel-label"><i class="fa-solid fa-eye"></i>Preview</div>
-                    <div class="bg-pills" id="bgPills">
-                        <button class="bg-pill on" data-bg="dark"><i class="fa-solid fa-moon"></i></button>
-                        <button class="bg-pill" data-bg="light"><i class="fa-solid fa-sun"></i></button>
-                        <button class="bg-pill" data-bg="checker"><i class="fa-solid fa-chess-board"></i></button>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="bg-pills" id="bgPills">
+                            <button class="bg-pill on" data-bg="dark" title="Dark"><i class="fa-solid fa-moon"></i></button>
+                            <button class="bg-pill" data-bg="light" title="Light"><i class="fa-solid fa-sun"></i></button>
+                            <button class="bg-pill" data-bg="checker" title="Checkerboard"><i class="fa-solid fa-chess-board"></i></button>
+                        </div>
+                        <div class="color-picker-wrap" title="Custom background color">
+                            <input type="color" id="customBgPicker" value="#06060b">
+                            <span>Custom</span>
+                        </div>
                     </div>
                 </div>
                 <div class="panel-body">
                     <div class="preview-zone" id="pz">
                         <div class="empty-state" id="emptyState">
                             <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <p>SVG code paste karein ya sample choose karein</p>
+                            <p>Paste SVG code or choose a sample</p>
                         </div>
                         <div class="preview-inner" id="pvInner" style="display:none;"></div>
                     </div>
-                    <!-- SAB SYMBOLS EK SAATH GRID MEIN -->
+                    <!-- All symbols grid -->
                     <div class="sprite-grid" id="sGrid"></div>
                 </div>
                 <div class="preview-foot">
@@ -452,8 +498,10 @@
         const sampleMenu = document.getElementById('sampleMenu');
         const tBox = document.getElementById('tBox');
         const expCvs = document.getElementById('expCvs');
+        const customBgPicker = document.getElementById('customBgPicker');
 
         let zoom = 1, curSvg = '', symbols = [], debounce = null;
+        let currentBgMode = 'dark';
 
         /* === SAMPLES === */
         const samples = {
@@ -598,15 +646,15 @@
                 const doc = new DOMParser().parseFromString(svg.trim(), 'image/svg+xml');
                 if (doc.querySelector('parsererror')) throw new Error(doc.querySelector('parsererror').textContent.substring(0, 120));
                 const root = doc.documentElement;
-                if (root.tagName.toLowerCase() !== 'svg') throw new Error('Root <' + root.tagName + '> hai, <svg> hona chahiye');
+                if (root.tagName.toLowerCase() !== 'svg') throw new Error('Root <' + root.tagName + '> found, expected <svg>');
 
                 symbols = Array.from(root.querySelectorAll('symbol')).map(s => s.id);
 
-                /* Agar sprite hai (symbols + display:none) toh sab ek saath grid mein dikhao */
+                /* If sprite (symbols + display:none) show all in grid */
                 if (symbols.length > 0 && (root.style.display === 'none' || root.getAttribute('style')?.includes('display:none'))) {
                     showAllSymbols(svg, symbols);
                 } else {
-                    /* Normal SVG — seedha preview */
+                    /* Normal SVG — direct preview */
                     pvInner.innerHTML = svg.trim();
                     pvInner.style.display = 'flex';
                     emptyState.style.display = 'none';
@@ -627,7 +675,7 @@
             }
         }
 
-        /* === SAB SYMBOLS EK SAATH GRID === */
+        /* === ALL SYMBOLS GRID === */
         function showAllSymbols(svg, syms) {
             sGrid.innerHTML = '';
             const parser = new DOMParser();
@@ -638,10 +686,8 @@
                 if (!sym) return;
                 const vb = sym.getAttribute('viewBox') || '0 0 24 24';
                 const kids = Array.from(sym.childNodes).map(n => n.outerHTML || n.textContent).filter(Boolean).join('\n    ');
-                const single = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}"><use href="#${id}"/></svg>`;
 
-                /* Card banao — full SVG with definitions for use to work */
-                const fullSvg = svg.trim();
+                /* Card with inline children for preview */
                 const cardSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="28" height="28">${kids}</svg>`;
 
                 const card = document.createElement('div');
@@ -664,7 +710,7 @@
 
             sGrid.classList.add('show');
 
-            /* Pehla symbol main preview mein bhi */
+            /* First symbol in main preview */
             if (syms.length > 0) {
                 const doc = parser.parseFromString(svg, 'image/svg+xml');
                 const sym = doc.getElementById(syms[0]);
@@ -694,37 +740,53 @@
         document.getElementById('zRst').onclick = () => setZ(1);
         pz.addEventListener('wheel', (e) => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); setZ(zoom + (e.deltaY > 0 ? -0.1 : 0.1)); } }, { passive: false });
 
-        /* === BG Toggle === */
+        /* === BG Toggle + Custom Color === */
         document.getElementById('bgPills').addEventListener('click', (e) => {
             const b = e.target.closest('.bg-pill'); if (!b) return;
             document.querySelectorAll('.bg-pill').forEach(p => p.classList.remove('on'));
             b.classList.add('on');
-            pz.className = 'preview-zone';
-            if (b.dataset.bg === 'light') pz.classList.add('bg-light');
-            else if (b.dataset.bg === 'checker') pz.classList.add('bg-checker');
+            currentBgMode = b.dataset.bg;
+            applyBg();
         });
+
+        customBgPicker.addEventListener('input', () => {
+            document.querySelectorAll('.bg-pill').forEach(p => p.classList.remove('on'));
+            currentBgMode = 'custom';
+            applyBg();
+        });
+
+        function applyBg() {
+            pz.className = 'preview-zone';
+            pz.style.background = '';
+            if (currentBgMode === 'light') pz.classList.add('bg-light');
+            else if (currentBgMode === 'checker') pz.classList.add('bg-checker');
+            else if (currentBgMode === 'custom') {
+                pz.classList.add('bg-custom');
+                pz.style.background = customBgPicker.value;
+            }
+        }
 
         /* === Buttons === */
         document.getElementById('prevBtn').onclick = () => render(editor.value);
 
         document.getElementById('clearBtn').onclick = () => {
-            editor.value = ''; updLn(); render(''); toast('Code clear ho gaya', 'ok');
+            editor.value = ''; updLn(); render(''); toast('Code cleared', 'ok');
         };
 
         document.getElementById('copyBtn').onclick = () => {
-            if (!editor.value.trim()) { toast('Pehle code daalein', 'inf'); return; }
-            navigator.clipboard.writeText(editor.value).then(() => toast('Clipboard mein copy ho gaya', 'ok')).catch(() => { editor.select(); document.execCommand('copy'); toast('Copy ho gaya', 'ok'); });
+            if (!editor.value.trim()) { toast('Paste code first', 'inf'); return; }
+            navigator.clipboard.writeText(editor.value).then(() => toast('Copied to clipboard', 'ok')).catch(() => { editor.select(); document.execCommand('copy'); toast('Copied', 'ok'); });
         };
 
         document.getElementById('dlSvg').onclick = () => {
-            if (!curSvg) { toast('Pehle preview karein', 'inf'); return; }
+            if (!curSvg) { toast('Preview first', 'inf'); return; }
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([curSvg], { type: 'image/svg+xml' }));
-            a.download = 'sprite.svg'; a.click(); toast('SVG download ho rahi hai', 'ok');
+            a.download = 'sprite.svg'; a.click(); toast('SVG downloading', 'ok');
         };
 
         document.getElementById('dlPng').onclick = () => {
-            if (!curSvg) { toast('Pehle preview karein', 'inf'); return; }
+            if (!curSvg) { toast('Preview first', 'inf'); return; }
             const url = URL.createObjectURL(new Blob([curSvg], { type: 'image/svg+xml;charset=utf-8' }));
             const img = new Image();
             img.onload = () => {
@@ -736,13 +798,13 @@
                     a.download = 'sprite.png'; a.click(); toast('PNG export (2x)', 'ok');
                 });
             };
-            img.onerror = () => { URL.revokeObjectURL(url); toast('PNG export fail — foreignObject ho toh kaam nahi karega', 'err'); };
+            img.onerror = () => { URL.revokeObjectURL(url); toast('PNG export failed', 'err'); };
             img.src = url;
         };
 
         /* === Format === */
         document.getElementById('fmtBtn').onclick = () => {
-            if (!editor.value.trim()) { toast('Format karne ke liye code daalein', 'inf'); return; }
+            if (!editor.value.trim()) { toast('Paste code to format', 'inf'); return; }
             try {
                 let ind = 0;
                 const lines = editor.value.replace(/>\s*</g, '>\n<').split('\n');
@@ -753,8 +815,31 @@
                     out.push('  '.repeat(ind) + l);
                     if (l.startsWith('<') && !l.startsWith('</') && !l.startsWith('<?') && !l.endsWith('/>') && !l.includes('</')) ind++;
                 });
-                editor.value = out.join('\n'); updLn(); toast('Code format ho gaya', 'ok');
-            } catch (e) { toast('Format fail', 'err'); }
+                editor.value = out.join('\n'); updLn(); toast('Code formatted', 'ok');
+            } catch (e) { toast('Format failed', 'err'); }
+        };
+
+        /* === Minify / Compress === */
+        document.getElementById('minifyBtn').onclick = () => {
+            if (!editor.value.trim()) { toast('Paste code to minify', 'inf'); return; }
+            try {
+                let code = editor.value;
+                /* Remove XML comments */
+                code = code.replace(/<!--[\s\S]*?-->/g, '');
+                /* Remove excess whitespace */
+                code = code.replace(/>\s+</g, '><');
+                code = code.replace(/\s+/g, ' ');
+                /* Remove unnecessary spaces around = and quotes */
+                code = code.replace(/\s*=\s*"/g, '="');
+                /* Trim */
+                code = code.trim();
+                editor.value = code;
+                updLn();
+                const before = editor.value.length;
+                /* Re-parse to validate */
+                render(code);
+                toast('Minified! Saved ' + Math.round((1 - before/editor.value.length)*100) + '%', 'ok');
+            } catch (e) { toast('Minify failed', 'err'); }
         };
 
         /* === Samples === */
@@ -764,7 +849,7 @@
             it.onclick = () => {
                 const k = it.dataset.s; if (!samples[k]) return;
                 editor.value = samples[k]; updLn(); render(samples[k]);
-                sampleMenu.classList.remove('open'); toast('Sample load ho gaya', 'ok');
+                sampleMenu.classList.remove('open'); toast('Sample loaded', 'ok');
             };
         });
 

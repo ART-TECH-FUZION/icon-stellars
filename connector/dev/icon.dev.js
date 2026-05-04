@@ -38,8 +38,8 @@
   const REPO_PATH = "art-tech-fuzion/icon-stellars";
   
   // URL Construction: Primary (from script tag) and Fallback (latest)
-  const PRIMARY_BASE = `https://cdn.jsdelivr.net/gh/${REPO_PATH}@${DETECTED_VERSION}/sprites`;
-  const LATEST_BASE = `https://cdn.jsdelivr.net/gh/${REPO_PATH}@latest/sprites`;
+  const PRIMARY_BASE = `https://cdn.jsdelivr.net/gh/${REPO_PATH}@${DETECTED_VERSION}/sprites/prod`;
+  const LATEST_BASE = `https://cdn.jsdelivr.net/gh/${REPO_PATH}@latest/sprites/prod`;
   
   // State tracking to prevent redundant network requests and duplicate injections
   const loadedSprites = new Set();
