@@ -133,7 +133,7 @@
     const style = document.createElement("style");
     style.id = "icon-stellar-styles";
     style.innerHTML = `
-      .is-icon { width: 1em; height: 1em; fill: currentColor; display: flex; align-items: center; justify-content: center; vertical-align: middle; margin-left: 0.25rem;}
+      .is-icon { width: 1em; height: 1em; fill: currentColor; display: flex; align-items: center; justify-content: center; vertical-align: middle; margin: 0 0.25rem;}
       .icon-missing { font-size: 1em; display: inline-block; vertical-align: middle; font-family: sans-serif; opacity: 0.7; }
     `;
     document.head.appendChild(style);
