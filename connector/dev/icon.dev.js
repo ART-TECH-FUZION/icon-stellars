@@ -17,7 +17,7 @@
    * ============================================================================
    * VERSION DETECTION
    * ============================================================================
-   * Scans all <script> tags to find the Icon-Stellar loader and extracts 
+   * Scans all <script> tags to find the Icon-Stellar loader and extracts
    * the version tag (e.g., @v1.0.0). Defaults to 'latest' if not found.
    */
   function getVersionFromScript() {
@@ -36,11 +36,11 @@
   // Configuration Constants
   const DETECTED_VERSION = getVersionFromScript();
   const REPO_PATH = "art-tech-fuzion/icon-stellars";
-  
+
   // URL Construction: Primary (from script tag) and Fallback (latest)
   const PRIMARY_BASE = `https://cdn.jsdelivr.net/gh/${REPO_PATH}@${DETECTED_VERSION}/sprites/prod`;
   const LATEST_BASE = `https://cdn.jsdelivr.net/gh/${REPO_PATH}@latest/sprites/prod`;
-  
+
   // State tracking to prevent redundant network requests and duplicate injections
   const loadedSprites = new Set();
   const activeFetches = new Map();
@@ -62,7 +62,8 @@
 
     // Set identifier and hide visually without breaking <use> references
     svgNode.setAttribute("data-sprite", spriteFile);
-    svgNode.style.cssText = "position: absolute; width: 0; height: 0; overflow: hidden;";
+    svgNode.style.cssText =
+      "position: absolute; width: 0; height: 0; overflow: hidden;";
     svgNode.setAttribute("aria-hidden", "true");
 
     const inject = () => {
@@ -93,21 +94,21 @@
       try {
         // Step 1: Attempt to load the specific version requested
         let response = await fetch(`${PRIMARY_BASE}/${spriteFile}`);
-        
+
         // Step 2: Fallback to @latest if primary fails (404) and was not already @latest
         if (!response.ok && DETECTED_VERSION !== "latest") {
           response = await fetch(`${LATEST_BASE}/${spriteFile}`);
         }
-        
-        if (!response.ok) throw new Error("Resource not found on primary or latest");
-        
+
+        if (!response.ok)
+          throw new Error("Resource not found on primary or latest");
+
         const data = await response.text();
         if (!data.includes("<svg")) throw new Error("Invalid SVG content");
 
         injectSprite(data, spriteFile);
         loadedSprites.add(spriteFile);
         return true;
-
       } catch (error) {
         return false; // Silent failure allows the missing icon placeholder to show
       }
@@ -125,14 +126,14 @@
    * STYLING & HELPERS
    * ============================================================================
    */
-  
+
   // Inject basic CSS for icon sizing and error display
   function injectDefaultStyles() {
     if (document.getElementById("icon-stellar-styles")) return;
     const style = document.createElement("style");
     style.id = "icon-stellar-styles";
     style.innerHTML = `
-      .is-icon { width: 1em; height: 1em; fill: currentColor; display: inline-block; vertical-align: middle; }
+      .is-icon { width: 1em; height: 1em; fill: currentColor; display: flex; align-items: center; justify-content: center; vertical-align: middle; margin-left: 0.25rem;}
       .icon-missing { font-size: 1em; display: inline-block; vertical-align: middle; font-family: sans-serif; opacity: 0.7; }
     `;
     document.head.appendChild(style);
@@ -142,11 +143,15 @@
   function createSVGElement(iconId) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-    
+
     // Support for xlink:href (older browsers) and modern href
-    use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", `#${iconId}`);
+    use.setAttributeNS(
+      "http://www.w3.org/1999/xlink",
+      "xlink:href",
+      `#${iconId}`,
+    );
     use.setAttribute("href", `#${iconId}`);
-    
+
     svg.appendChild(use);
     svg.classList.add("is-icon");
     return svg;
@@ -159,7 +164,9 @@
    * Finds elements with 'data-icon' and transforms them into SVG icons.
    */
   async function renderIcons(rootElement = document) {
-    const elements = rootElement.querySelectorAll("[data-icon]:not([data-icon-rendered])");
+    const elements = rootElement.querySelectorAll(
+      "[data-icon]:not([data-icon-rendered])",
+    );
 
     for (const el of elements) {
       const value = el.getAttribute("data-icon");
@@ -168,7 +175,7 @@
       el.setAttribute("data-icon-rendered", "true");
 
       const parts = value.split(":");
-      
+
       // Validation: Format must be category:name:variant
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
         el.innerHTML = `<span class="icon-missing" title="Invalid Format">☒</span>`;
@@ -198,13 +205,16 @@
    * DOM OBSERVATION & INITIALIZATION
    * ============================================================================
    */
-  
+
   // Watch for new elements added to the DOM (for Elementor AJAX or dynamic loaders)
   function observeDOMChanges() {
     const observer = new MutationObserver((mutations) => {
       let shouldRender = false;
       for (const mutation of mutations) {
-        if (mutation.addedNodes.length > 0) { shouldRender = true; break; }
+        if (mutation.addedNodes.length > 0) {
+          shouldRender = true;
+          break;
+        }
       }
       if (shouldRender) setTimeout(() => renderIcons(), 50);
     });
@@ -225,5 +235,4 @@
   } else {
     init();
   }
-
 })();
