@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" id="heart-light">
-    <g fill="none" stroke="currentColor" stroke-width="24">
-        <path
-            d="M320 194.72C320 -5.28035 60 34.7197 60 254.72C60 434.72 200 514.72 320 574.72C440 514.72 580 434.72 580 254.72C580 34.7197 320 -5.28035 320 194.72Z" />
-    </g>
+<svg id="heart-light" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<g fill="none" stroke="currentColor" stroke-width="1.5">
+<path d="M12 7.302C12 -0.198013 2.25 1.30199 2.25 9.552C2.25 16.302 7.5 19.302 12 21.552C16.5 19.302 21.75 16.302 21.75 9.552C21.75 1.30199 12 -0.198013 12 7.302Z"/>
+</g>
 </svg>

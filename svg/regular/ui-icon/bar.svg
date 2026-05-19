@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" id="bar-regular">
-    <g fill="none" stroke="currentColor" stroke-width="40" stroke-linejoin="round">
-       <path d="M118 155C118 155 364.228 155 522 155H118Z"/>
-        <path d="M118 319C118 319 364.228 319 522 319H118Z"/>
-        <path d="M118 485C118 485 364.228 485 522 485H118Z"/>
+<svg id="bar-regular" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+        <path d="M4.425 5.8125C4.425 5.8125 13.6585 5.8125 19.575 5.8125H4.425Z" />
+        <path d="M4.425 11.9625C4.425 11.9625 13.6585 11.9625 19.575 11.9625H4.425Z" />
+        <path d="M4.425 18.1875C4.425 18.1875 13.6585 18.1875 19.575 18.1875H4.425Z" />
     </g>
 </svg>
