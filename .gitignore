@@ -1,4 +1,4 @@
 .code-review-graph
 .vscode
 .DS_Store
-.env
+.env.DS_Store
