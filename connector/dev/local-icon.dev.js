@@ -131,14 +131,14 @@
         display:inline-flex;
         align-items:center;
         justify-content:center;
-        vertical-align:middle;
+        vertical-align:-0.2em;
         margin:0 0.25rem;
       }
 
       .icon-missing{
         font-size:1em;
         display:inline-block;
-        vertical-align:middle;
+        vertical-align:-0.2em;
         font-family:sans-serif;
         opacity:0.7;
       }
